@@ -1,18 +1,8 @@
 {
-  "linkedin.com": {
-    "orgNameSelector": "span.org-top-card-summary-info-list__info-item",
-    "idSource": "metaTag",
-    "idSelector": "meta[name='profile-id']"
-  },
-  "github.com": {
-    "orgNameSelector": "span.p-name, h1",
-    "idSource": "globalPath",
-    "idGlobalPath": "Jayjoshi08092003"
-  },
-  "leetcode.com": {
-    "orgNameSelector": "div[data-testid='profile-school']",
-    "idSource": "attribute",
-    "idSelector": "div[data-userid]",
-    "idAttribute": "data-userid"
+  "university_display_name": "Stanford University",
+  "selectors": {
+    "profile_id_container": "meta[property='profile:username']",
+    "fallback_script_match": "current_user_id",
+    "education_section_header": ".p-name, h1.vcard-names-container"
   }
 }

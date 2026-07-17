@@ -1,555 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Universal Trust Wallet — Institution Registry Compiler</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<style>
-  :root {
-    --ink: #0f1216;
-    --panel: #161b21;
-    --panel-raised: #1d232b;
-    --hairline: #2b323b;
-    --text: #e9e6dd;
-    --text-dim: #9aa3ad;
-    --seal: #c9a227;
-    --seal-dim: #8d7220;
-    --green: #2f9e5b;
-    --blue: #2f7de1;
-    --error: #d8674f;
-    --font-display: 'Fraunces', Georgia, serif;
-    --font-body: 'Inter', system-ui, sans-serif;
-    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    background: var(--ink);
-    color: var(--text);
-    font-family: var(--font-body);
-    line-height: 1.5;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
-  }
-
-  a { color: var(--seal); }
-
-  .wrap {
-    max-width: 920px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
-  }
-
-  header.masthead {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border-bottom: 1px solid var(--hairline);
-    padding-bottom: 24px;
-    margin-bottom: 28px;
-  }
-
-  .seal {
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    border: 2px solid var(--seal);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-family: var(--font-display);
-    font-size: 20px;
-    color: var(--seal);
-  }
-
-  h1 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 28px;
-    margin: 0;
-    letter-spacing: 0.2px;
-  }
-
-  h1 small {
-    display: block;
-    font-family: var(--font-body);
-    font-weight: 400;
-    font-size: 13px;
-    color: var(--text-dim);
-    margin-top: 4px;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-  }
-
-  .notice {
-    background: var(--panel);
-    border: 1px solid var(--seal-dim);
-    border-left: 3px solid var(--seal);
-    border-radius: 4px;
-    padding: 16px 18px;
-    margin-bottom: 32px;
-    font-size: 14px;
-    color: var(--text-dim);
-  }
-
-  .notice strong { color: var(--text); }
-
-  section {
-    background: var(--panel);
-    border: 1px solid var(--hairline);
-    border-radius: 6px;
-    padding: 24px;
-    margin-bottom: 24px;
-  }
-
-  section h2 {
-    font-family: var(--font-display);
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0 0 4px;
-  }
-
-  section p.hint {
-    color: var(--text-dim);
-    font-size: 13px;
-    margin: 0 0 18px;
-  }
-
-  .field-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  @media (max-width: 640px) {
-    .field-row { grid-template-columns: 1fr; }
-  }
-
-  label {
-    display: block;
-    font-size: 12px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin-bottom: 6px;
-  }
-
-  input[type="text"], input[type="email"], input[type="number"] {
-    width: 100%;
-    background: var(--ink);
-    border: 1px solid var(--hairline);
-    border-radius: 4px;
-    padding: 10px 11px;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 13px;
-  }
-
-  input:focus-visible, button:focus-visible {
-    outline: 2px solid var(--seal);
-    outline-offset: 2px;
-  }
-
-  button {
-    background: var(--seal);
-    color: var(--ink);
-    border: none;
-    border-radius: 4px;
-    padding: 10px 16px;
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  button:hover { background: #ddb63a; }
-
-  button.secondary {
-    background: transparent;
-    border: 1px solid var(--hairline);
-    color: var(--text);
-  }
-
-  button.secondary:hover { border-color: var(--seal); }
-
-  button.remove-btn {
-    background: transparent;
-    border: 1px solid var(--error);
-    color: var(--error);
-    padding: 4px 10px;
-    font-size: 12px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 14px;
-    font-size: 13px;
-  }
-
-  thead th {
-    text-align: left;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: var(--text-dim);
-    border-bottom: 1px solid var(--hairline);
-    padding: 6px 8px;
-  }
-
-  tbody td {
-    border-bottom: 1px solid var(--hairline);
-    padding: 8px;
-    vertical-align: middle;
-  }
-
-  td.mono { font-family: var(--font-mono); color: var(--seal); }
-
-  .empty-row td {
-    color: var(--text-dim);
-    font-style: italic;
-    text-align: center;
-    padding: 18px 8px;
-  }
-
-  .tier-badge {
-    display: inline-block;
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-
-  .tier-alumni { background: rgba(47, 158, 91, 0.18); color: var(--green); }
-  .tier-active { background: rgba(47, 125, 225, 0.18); color: var(--blue); }
-
-  .error-text {
-    color: var(--error);
-    font-size: 13px;
-    min-height: 18px;
-    margin-top: 8px;
-  }
-
-  .count-pill {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-
-  .compile-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-top: 18px;
-    flex-wrap: wrap;
-  }
-
-  footer {
-    text-align: center;
-    color: var(--text-dim);
-    font-size: 12px;
-    margin-top: 40px;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <title>UTW Admin Dashboard</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .panel { border: 1px solid #ddd; padding: 20px; border-radius: 6px; margin-bottom: 20px; }
+        button { background: #0052cc; color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0043a6; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; font-size: 14px; }
+        .stat-box { background: #f0f4f8; padding: 15px; border-radius: 4px; }
+        .stat-label { font-weight: bold; color: #555; display: block; margin-bottom: 5px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #0052cc; }
+        #progress { margin-top: 10px; font-size: 14px; color: #666; }
+    </style>
 </head>
 <body>
-<div class="wrap">
+    <div class="container">
+        <h1>Trust Wallet Enterprise Administration</h1>
+        
+        <div class="panel">
+            <h3>1. Import CSV Data</h3>
+            <p>Upload a CSV file containing identity strings (e.g., <code>linkedin:johndoe</code>).</p>
+            <input type="file" id="csvFile" accept=".csv" />
+            <div id="progress">Waiting for file...</div>
+        </div>
 
-  <header class="masthead">
-    <div class="seal">UTW</div>
-    <div>
-      <h1>Universal Trust Wallet
-        <small>Institution Registry Compiler</small>
-      </h1>
+        <div class="panel">
+            <h3>2. Generate Bloom Filters</h3>
+            <div style="display: flex; gap: 10px;">
+                <button id="btnGenerateAlumni" disabled>Generate verified-alumni.bin</button>
+                <button id="btnGenerateActive" disabled>Generate current-active.bin</button>
+                <button id="btnGenerateRevoked" disabled>Generate revoked.bin</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Statistics</h3>
+            <div class="stats">
+                <div class="stat-box">
+                    <span class="stat-label">Records Processed</span>
+                    <span class="stat-value" id="statRecords">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Duplicates Skipped</span>
+                    <span class="stat-value" id="statDuplicates">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Est. False Positive Rate</span>
+                    <span class="stat-value" id="statFPR">0.00%</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">SHA-256 Checksum (Last)</span>
+                    <span class="stat-value" id="statChecksum" style="font-size: 14px; word-break: break-all;">-</span>
+                </div>
+            </div>
+        </div>
     </div>
-  </header>
-
-  <div class="notice">
-    <strong>Before compiling:</strong> every name, email, and platform ID entered below must already be
-    verified against your institution's internal Single Sign-On system (Google Workspace, Okta, or
-    equivalent) — this dashboard performs no identity verification of its own. It only compiles
-    already-verified records into anonymized bloom filter binaries. Do not add unverified entries.
-  </div>
-
-  <section id="config-section">
-    <h2>Institution Compilation Key</h2>
-    <p class="hint">
-      These three salts and the bloom filter size must exactly match the entry your institution has
-      registered in the master ledger (<code>ledger.json</code>) — the browser extension will only
-      report a match if the same salts and bit-array size are used on both sides.
-    </p>
-    <div class="field-row">
-      <div>
-        <label for="salt-1">Salt 1</label>
-        <input type="text" id="salt-1" placeholder="e.g. a1f9c3d2e7b04f88" />
-      </div>
-      <div>
-        <label for="salt-2">Salt 2</label>
-        <input type="text" id="salt-2" placeholder="e.g. 6e2b7c1a9d4f0e33" />
-      </div>
-      <div>
-        <label for="salt-3">Salt 3</label>
-        <input type="text" id="salt-3" placeholder="e.g. c48d0a7f31b6e9c5" />
-      </div>
-    </div>
-    <div class="field-row" style="grid-template-columns: 1fr;">
-      <div>
-        <label for="bloom-bits">Bloom filter size (bits, multiple of 8)</label>
-        <input type="number" id="bloom-bits" value="65536" min="1024" step="8" />
-      </div>
-    </div>
-  </section>
-
-  <section id="alumni-section">
-    <h2>Alumni / Former Employees <span class="count-pill">(<span id="alumni-count">0</span> records — permanent)</span></h2>
-    <p class="hint">Compiles into <code>verified-alumni.bin</code>.</p>
-    <div class="field-row">
-      <div>
-        <label for="alumni-name">Full name</label>
-        <input type="text" id="alumni-name" />
-      </div>
-      <div>
-        <label for="alumni-email">Organizational email</label>
-        <input type="email" id="alumni-email" />
-      </div>
-      <div>
-        <label for="alumni-id">Permanent platform ID</label>
-        <input type="text" id="alumni-id" />
-      </div>
-    </div>
-    <button type="button" onclick="addEntry('alumni')">Add alumni record</button>
-    <div class="error-text" id="alumni-error"></div>
-    <table>
-      <thead><tr><th>Name</th><th>Email</th><th>Platform ID</th><th></th></tr></thead>
-      <tbody id="alumni-tbody"></tbody>
-    </table>
-  </section>
-
-  <section id="active-section">
-    <h2>Active Students / Current Employees <span class="count-pill">(<span id="active-count">0</span> records — real-time)</span></h2>
-    <p class="hint">Compiles into <code>current-active.bin</code>. Re-compile and re-upload whenever this list changes.</p>
-    <div class="field-row">
-      <div>
-        <label for="active-name">Full name</label>
-        <input type="text" id="active-name" />
-      </div>
-      <div>
-        <label for="active-email">Organizational email</label>
-        <input type="email" id="active-email" />
-      </div>
-      <div>
-        <label for="active-id">Permanent platform ID</label>
-        <input type="text" id="active-id" />
-      </div>
-    </div>
-    <button type="button" onclick="addEntry('active')">Add active record</button>
-    <div class="error-text" id="active-error"></div>
-    <table>
-      <thead><tr><th>Name</th><th>Email</th><th>Platform ID</th><th></th></tr></thead>
-      <tbody id="active-tbody"></tbody>
-    </table>
-  </section>
-
-  <section id="compile-section">
-    <h2>Compile &amp; Download</h2>
-    <p class="hint">
-      Generates both raw bit-array buffers client-side. Nothing here is uploaded anywhere — you
-      download the two files and place them at <code>/.well-known/verified-alumni.bin</code> and
-      <code>/.well-known/current-active.bin</code> on your own static web server.
-    </p>
-    <div class="compile-actions">
-      <button type="button" onclick="compileAndDownload()">Compile both .bin files</button>
-      <button type="button" class="secondary" onclick="clearAll()">Clear all records</button>
-    </div>
-    <div class="error-text" id="compile-error"></div>
-  </section>
-
-  <footer>
-    Universal Trust Wallet — records never leave this browser tab until you choose to save the compiled files.
-  </footer>
-</div>
-
-<script>
-  const state = { alumni: [], active: [] };
-
-  // ---- FNV-1a / bloom filter primitives (see bloom.js in the extension
-  // for the full explanation of the brute-force caveat with this hash) ----
-  function fnv1a32(input, seed) {
-    let hash = (seed >>> 0) || 0x811c9dc5;
-    for (let i = 0; i < input.length; i++) {
-      hash ^= input.charCodeAt(i);
-      hash = Math.imul(hash, 0x01000193) >>> 0;
-    }
-    return hash >>> 0;
-  }
-
-  function setBit(bytes, bitIndex) {
-    const byteIndex = bitIndex >> 3;
-    const bitOffset = bitIndex & 7;
-    bytes[byteIndex] |= (1 << bitOffset);
-  }
-
-  function compileBloomFilter(entries, salts, bloomBits) {
-    const byteLength = Math.ceil(bloomBits / 8);
-    const bytes = new Uint8Array(byteLength);
-    for (const entry of entries) {
-      for (const salt of salts) {
-        const h = fnv1a32(`${salt}:${entry.platformId}`, 0x811c9dc5);
-        const bitIndex = h % bloomBits;
-        setBit(bytes, bitIndex);
-      }
-    }
-    return bytes;
-  }
-
-  function downloadBuffer(bytes, filename) {
-    const blob = new Blob([bytes], { type: "application/octet-stream" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  // ---- registry data entry ----
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  function isDuplicate(platformId, email) {
-    const all = [...state.alumni, ...state.active];
-    return all.some(
-      (e) => e.platformId === platformId || e.email.toLowerCase() === email.toLowerCase()
-    );
-  }
-
-  function addEntry(listName) {
-    const nameEl = document.getElementById(`${listName}-name`);
-    const emailEl = document.getElementById(`${listName}-email`);
-    const idEl = document.getElementById(`${listName}-id`);
-    const errorEl = document.getElementById(`${listName}-error`);
-    errorEl.textContent = "";
-
-    const name = nameEl.value.trim();
-    const email = emailEl.value.trim();
-    const platformId = idEl.value.trim();
-
-    if (!name || !email || !platformId) {
-      errorEl.textContent = "Name, organizational email, and permanent platform ID are all required.";
-      return;
-    }
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      errorEl.textContent = "Enter a valid email address.";
-      return;
-    }
-    if (isDuplicate(platformId, email)) {
-      errorEl.textContent = "Blocked: this platform ID or email is already registered (alumni or active).";
-      return;
-    }
-
-    state[listName].push({ name, email, platformId });
-    renderList(listName);
-    nameEl.value = "";
-    emailEl.value = "";
-    idEl.value = "";
-    nameEl.focus();
-  }
-
-  function removeEntry(listName, index) {
-    state[listName].splice(index, 1);
-    renderList(listName);
-  }
-
-  function renderList(listName) {
-    const tbody = document.getElementById(`${listName}-tbody`);
-    tbody.innerHTML = "";
-
-    if (state[listName].length === 0) {
-      const row = document.createElement("tr");
-      row.className = "empty-row";
-      row.innerHTML = `<td colspan="4">No records added yet.</td>`;
-      tbody.appendChild(row);
-    } else {
-      state[listName].forEach((entry, index) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${escapeHtml(entry.name)}</td>
-          <td>${escapeHtml(entry.email)}</td>
-          <td class="mono">${escapeHtml(entry.platformId)}</td>
-          <td><button type="button" class="remove-btn" data-list="${listName}" data-index="${index}">Remove</button></td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    document.getElementById(`${listName}-count`).textContent = state[listName].length;
-  }
-
-  document.addEventListener("click", (e) => {
-    if (e.target.matches(".remove-btn")) {
-      removeEntry(e.target.dataset.list, Number(e.target.dataset.index));
-    }
-  });
-
-  function clearAll() {
-    state.alumni = [];
-    state.active = [];
-    renderList("alumni");
-    renderList("active");
-    document.getElementById("compile-error").textContent = "";
-  }
-
-  function compileAndDownload() {
-    const salts = [
-      document.getElementById("salt-1").value.trim(),
-      document.getElementById("salt-2").value.trim(),
-      document.getElementById("salt-3").value.trim()
-    ];
-    const bloomBits = parseInt(document.getElementById("bloom-bits").value, 10);
-    const compileError = document.getElementById("compile-error");
-    compileError.textContent = "";
-
-    if (salts.some((s) => !s)) {
-      compileError.textContent = "All three institution salts are required before compiling.";
-      return;
-    }
-    if (!Number.isInteger(bloomBits) || bloomBits % 8 !== 0 || bloomBits < 1024) {
-      compileError.textContent = "Bloom filter size must be a whole number, a multiple of 8, and at least 1024 bits.";
-      return;
-    }
-    if (state.alumni.length === 0 && state.active.length === 0) {
-      compileError.textContent = "Add at least one alumni or active record before compiling.";
-      return;
-    }
-
-    try {
-      const alumniBytes = compileBloomFilter(state.alumni, salts, bloomBits);
-      const activeBytes = compileBloomFilter(state.active, salts, bloomBits);
-      downloadBuffer(alumniBytes, "verified-alumni.bin");
-      downloadBuffer(activeBytes, "current-active.bin");
-    } catch (err) {
-      compileError.textContent = `Compilation failed: ${err instanceof Error ? err.message : String(err)}`;
-    }
-  }
-
-  // initial render
-  renderList("alumni");
-  renderList("active");
-</script>
+    <script type="module" src="admin.js"></script>
 </body>
 </html>

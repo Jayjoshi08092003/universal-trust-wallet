@@ -1,83 +1,75 @@
-/**
- * background.js — Universal Trust Wallet service worker
- *
- * All cross-origin network requests are made here, not in content.js.
- * A fetch() issued directly from a content script runs subject to the
- * *hosting page's* CORS policy, not the extension's granted
- * host_permissions — so a content script fetch to an arbitrary
- * institution's .well-known/*.bin endpoint would be blocked in
- * production even though the manifest lists the right host permission.
- * Routing through this service worker (an extension-privileged context)
- * is what actually makes the host_permissions grant meaningful.
- */
+import { CONFIG } from './config.js';
+import { NetworkManager } from './network.js';
+import { BloomFilter } from './bloom.js';
+import { StorageManager } from './storage.js';
 
-const MASTER_LEDGER_BASE = "https://universal-trust-wallet.github.io/registry";
-const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
-
-async function cachedFetchJSON(cacheKey, url) {
-  const stored = await chrome.storage.local.get(cacheKey);
-  const entry = stored[cacheKey];
-  const now = Date.now();
-  if (entry && now - entry.fetchedAt < CACHE_TTL_MS) {
-    return entry.data;
+class TrustEngine {
+  static async initialize() {
+    await this.syncData();
+    chrome.alarms.create("syncData", { periodInMinutes: 60 });
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      if (alarm.name === "syncData") this.syncData();
+    });
   }
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Fetch failed for ${url}: HTTP ${res.status}`);
-  }
-  const data = await res.json();
-  await chrome.storage.local.set({ [cacheKey]: { data, fetchedAt: now } });
-  return data;
-}
 
-async function fetchBinary(url) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Fetch failed for ${url}: HTTP ${res.status}`);
-  }
-  const buffer = await res.arrayBuffer();
-  // Plain arrays survive structured-clone across the message channel cleanly.
-  return Array.from(new Uint8Array(buffer));
-}
-
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  (async () => {
+  static async syncData() {
     try {
-      switch (message?.type) {
-        case "GET_LEDGER": {
-          const data = await cachedFetchJSON("utw_ledger", `${MASTER_LEDGER_BASE}/ledger.json`);
-          sendResponse({ ok: true, data });
-          break;
-        }
-        case "GET_RULES": {
-          const data = await cachedFetchJSON("utw_rules", `${MASTER_LEDGER_BASE}/rules.json`);
-          sendResponse({ ok: true, data });
-          break;
-        }
-        case "GET_BLOOM_FILTERS": {
-          const domain = message.domain;
-          if (!domain || typeof domain !== "string") {
-            sendResponse({ ok: false, error: "Missing domain" });
-            break;
-          }
-          const [alumniResult, activeResult] = await Promise.allSettled([
-            fetchBinary(`https://${domain}/.well-known/verified-alumni.bin`),
-            fetchBinary(`https://${domain}/.well-known/current-active.bin`)
-          ]);
-          sendResponse({
-            ok: true,
-            alumni: alumniResult.status === "fulfilled" ? alumniResult.value : null,
-            active: activeResult.status === "fulfilled" ? activeResult.value : null
-          });
-          break;
-        }
-        default: {
-          sendResponse({ ok: false, error: `Unknown message type: ${message?.type}` });
-        }
-      }
-    } catch (err) {
-      sendResponse({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      const [alumniBin, activeBin, revokedBin] = await Promise.all([
+        NetworkManager.fetchSecure(CONFIG.ENDPOINTS.ALUMNI_BIN, 'bin'),
+        NetworkManager.fetchSecure(CONFIG.ENDPOINTS.ACTIVE_BIN, 'bin'),
+        NetworkManager.fetchSecure(CONFIG.ENDPOINTS.REVOKED_BIN, 'bin').catch(() => new Uint8Array(0)) 
+      ]);
+
+      await StorageManager.setSession('filters', {
+        alumni: Array.from(alumniBin),
+        active: Array.from(activeBin),
+        revoked: Array.from(revokedBin)
+      });
+      
+    } catch (error) {
+      console.error("Critical failure during sync.", error);
     }
-  })();
-  return true; // keep the message channel open for the async sendResponse above
+  }
+
+  static async verifyIdentity(identifier) {
+    let filters = await StorageManager.getSession('filters');
+    
+    // Lazy load fallback if session storage was cleared
+    if (!filters) {
+      await this.syncData();
+      filters = await StorageManager.getSession('filters');
+      if (!filters) return { status: 'unknown', reason: 'filters_unavailable' };
+    }
+
+    const revokedFilter = new BloomFilter(new Uint8Array(filters.revoked));
+    if (filters.revoked.length > 0 && await revokedFilter.test(identifier)) {
+      return { status: 'revoked', reason: 'in_revocation_list' };
+    }
+
+    const activeFilter = new BloomFilter(new Uint8Array(filters.active));
+    if (filters.active.length > 0 && await activeFilter.test(identifier)) {
+      return { status: 'verified_active', reason: 'in_active_list' };
+    }
+
+    const alumniFilter = new BloomFilter(new Uint8Array(filters.alumni));
+    if (filters.alumni.length > 0 && await alumniFilter.test(identifier)) {
+      return { status: 'verified_alumni', reason: 'in_alumni_list' };
+    }
+
+    return { status: 'unknown', reason: 'not_found' };
+  }
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'verifyProfile') {
+    TrustEngine.verifyIdentity(request.identifier)
+      .then(result => sendResponse(result))
+      .catch(error => {
+        console.error(error);
+        sendResponse({ status: 'error' });
+      });
+    return true; 
+  }
 });
+
+TrustEngine.initialize();

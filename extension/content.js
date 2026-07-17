@@ -1,193 +1,136 @@
-/**
- * content.js — Universal Trust Wallet cross-platform verification engine
- *
- * Runs on LinkedIn, GitHub, and LeetCode profile/company pages. Looks up
- * the organization on the master ledger, extracts the viewer's permanent
- * platform member ID per rules.json, and checks that ID against the
- * organization's two published bloom filters (fetched via background.js,
- * see the CORS note there). Fails silently on any missing file, network
- * error, or unmatched selector so a broken/unverified page is never
- * treated as a false positive.
- */
+class DOMShield {
+  static createBadge(statusData) {
+    const container = document.createElement('div');
+    container.className = 'utw-verification-badge';
+    container.style.display = 'inline-flex';
+    container.style.alignItems = 'center';
+    container.style.marginLeft = '8px';
+    container.style.padding = '2px 8px';
+    container.style.borderRadius = '12px';
+    container.style.fontSize = '12px';
+    container.style.fontWeight = 'bold';
+    container.style.fontFamily = 'system-ui, sans-serif';
+    container.setAttribute('data-utw-injected', 'true');
 
-(() => {
-  const HOSTNAME = window.location.hostname.replace(/^www\./, "");
+    const icon = document.createElement('span');
+    icon.style.marginRight = '4px';
 
-  function sendMessage(message) {
-    return new Promise((resolve) => {
-      try {
-        chrome.runtime.sendMessage(message, (response) => resolve(response));
-      } catch (_err) {
-        resolve(null);
-      }
-    });
-  }
+    const text = document.createElement('span');
 
-  function resolveHostKey(hostname) {
-    if (hostname.endsWith("linkedin.com")) return "linkedin.com";
-    if (hostname.endsWith("github.com")) return "github.com";
-    if (hostname.endsWith("leetcode.com")) return "leetcode.com";
-    return null;
-  }
-
-  function normalizeText(text) {
-    return (text || "").trim().toLowerCase();
-  }
-
-  /**
-   * Resolves which ledger domain (if any) an organization-name element on
-   * the page refers to. Prefers a same-card link to the org's own site;
-   * falls back to matching visible display name text against the ledger.
-   */
-  function findLedgerDomainForElement(el, ledger) {
-    const link = el.closest("a[href]") || el.parentElement?.querySelector("a[href]");
-    if (link) {
-      try {
-        const url = new URL(link.href, window.location.href);
-        const host = url.hostname.replace(/^www\./, "");
-        if (ledger[host]) return host;
-      } catch (_err) {
-        // malformed or relative href — fall through to text matching
-      }
-    }
-    const text = normalizeText(el.textContent);
-    if (!text) return null;
-    for (const [domain, entry] of Object.entries(ledger)) {
-      if (entry.displayName && normalizeText(entry.displayName) === text) {
-        return domain;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Extracts the viewer's permanent numerical platform member ID using
-   * the strategy declared for this host in rules.json, so no single
-   * platform's markup/DOM quirks are hardcoded here.
-   */
-  function extractPlatformId(rule) {
-    try {
-      if (!rule || !rule.idSource) return null;
-
-      if (rule.idSource === "attribute" && rule.idSelector && rule.idAttribute) {
-        const el = document.querySelector(rule.idSelector);
-        const val = el ? el.getAttribute(rule.idAttribute) : null;
-        return val ? val.trim() : null;
-      }
-
-      if (rule.idSource === "metaTag" && rule.idSelector) {
-        const el = document.querySelector(rule.idSelector);
-        const val = el ? el.getAttribute("content") : null;
-        return val ? val.trim() : null;
-      }
-
-      if (rule.idSource === "globalPath" && rule.idGlobalPath) {
-        const parts = rule.idGlobalPath.split(".");
-        let cursor = window;
-        for (const part of parts) {
-          if (cursor == null) return null;
-          cursor = cursor[part];
-        }
-        return cursor != null ? String(cursor).trim() : null;
-      }
-    } catch (_err) {
+    if (statusData.status === 'verified_active') {
+      container.style.backgroundColor = '#e6f4ea';
+      container.style.color = '#137333';
+      icon.textContent = '✓';
+      text.textContent = 'Verified Active';
+    } else if (statusData.status === 'verified_alumni') {
+      container.style.backgroundColor = '#e8f0fe';
+      container.style.color = '#1967d2';
+      icon.textContent = '✓';
+      text.textContent = 'Verified Alumni';
+    } else if (statusData.status === 'revoked') {
+      container.style.backgroundColor = '#fce8e6';
+      container.style.color = '#c5221f';
+      icon.textContent = '⚠';
+      text.textContent = 'Revoked';
+    } else {
       return null;
     }
+
+    container.appendChild(icon);
+    container.appendChild(text);
+    return container;
+  }
+}
+
+class IdentityExtractor {
+  static getLinkedInID() {
+    const match = window.location.pathname.match(/^\/in\/([^/]+)/);
+    return match ? `linkedin:${match[1]}` : null;
+  }
+
+  static getGitHubID() {
+    const match = window.location.pathname.match(/^\/([^/]+)/);
+    // Exclude reserved paths
+    const reserved = ['pulls', 'issues', 'marketplace', 'explore', 'notifications'];
+    return (match && !reserved.includes(match[1])) ? `github:${match[1]}` : null;
+  }
+  
+  static getLeetCodeID() {
+     const match = window.location.pathname.match(/^\/u\/([^/]+)/) || window.location.pathname.match(/^\/([^/]+)\/?$/);
+     const reserved = ['problems', 'discuss', 'contest', 'store'];
+     return (match && !reserved.includes(match[1])) ? `leetcode:${match[1]}` : null;
+  }
+
+  static extract() {
+    const host = window.location.hostname;
+    if (host.includes('linkedin.com')) return this.getLinkedInID();
+    if (host.includes('github.com')) return this.getGitHubID();
+    if (host.includes('leetcode.com')) return this.getLeetCodeID();
     return null;
   }
+}
 
-  function injectBadge(el, tier) {
-    if (el.dataset.utwBadged === "1") return;
-    el.dataset.utwBadged = "1";
+class PageObserver {
+  constructor() {
+    this.observer = null;
+    this.pendingUrl = null;
+    this.verificationInProgress = false;
+  }
 
-    const badge = document.createElement("span");
-    badge.setAttribute("role", "img");
-    badge.setAttribute(
-      "aria-label",
-      tier === "active" ? "Verified by Universal Trust Wallet: currently active" : "Verified by Universal Trust Wallet: permanent record"
-    );
-    badge.title =
-      tier === "active"
-        ? "Universal Trust Wallet: verified active student/employee"
-        : "Universal Trust Wallet: verified alumnus/former employee";
+  async verifyAndInject() {
+    if (this.verificationInProgress) return;
+    
+    const targetElement = document.querySelector('h1'); 
+    if (!targetElement) return;
+    
+    if (targetElement.parentNode.querySelector('[data-utw-injected="true"]')) {
+      return; 
+    }
 
-    Object.assign(badge.style, {
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "15px",
-      height: "15px",
-      marginLeft: "4px",
-      borderRadius: "50%",
-      fontSize: "10px",
-      lineHeight: "1",
-      color: "#ffffff",
-      background: tier === "active" ? "#1a73e8" : "#1a9d4b",
-      verticalAlign: "middle"
+    const identifier = IdentityExtractor.extract();
+    if (!identifier) return;
+
+    this.verificationInProgress = true;
+
+    try {
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'verifyProfile', identifier }, resolve);
+      });
+
+      if (response && response.status !== 'unknown' && response.status !== 'error') {
+        const badge = DOMShield.createBadge(response);
+        if (badge && !targetElement.parentNode.querySelector('[data-utw-injected="true"]')) {
+            targetElement.parentNode.insertBefore(badge, targetElement.nextSibling);
+        }
+      }
+    } finally {
+      this.verificationInProgress = false;
+    }
+  }
+
+  start() {
+    this.verifyAndInject();
+
+    let debounceTimer;
+    this.observer = new MutationObserver(() => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const reqCallback = window.requestIdleCallback || window.setTimeout;
+        reqCallback(() => {
+          if (window.location.href !== this.pendingUrl) {
+            this.pendingUrl = window.location.href;
+            this.verifyAndInject();
+          } else {
+             // Retest injection if DOM reconstructed
+             this.verifyAndInject();
+          }
+        }, { timeout: 1000 });
+      }, 250);
     });
-    badge.textContent = "\u2713"; // check mark
-    el.appendChild(badge);
+
+    this.observer.observe(document.body, { childList: true, subtree: true });
   }
+}
 
-  async function verifyElement(el, ledger, rule) {
-    const domain = findLedgerDomainForElement(el, ledger);
-    if (!domain) return;
-
-    const entry = ledger[domain];
-    if (!entry || !Array.isArray(entry.salts) || entry.salts.length !== 3 || !entry.bloomBits) {
-      return; // malformed ledger entry — never trust a partial config
-    }
-
-    const platformId = extractPlatformId(rule);
-    if (!platformId) return;
-
-    const bloomResponse = await sendMessage({ type: "GET_BLOOM_FILTERS", domain });
-    if (!bloomResponse || !bloomResponse.ok) return;
-
-    const { bloomContains } = self.UTW_BLOOM;
-    const activeBytes = bloomResponse.active ? new Uint8Array(bloomResponse.active) : null;
-    const alumniBytes = bloomResponse.alumni ? new Uint8Array(bloomResponse.alumni) : null;
-
-    if (activeBytes && bloomContains(activeBytes, platformId, entry.salts, entry.bloomBits)) {
-      injectBadge(el, "active");
-      return;
-    }
-    if (alumniBytes && bloomContains(alumniBytes, platformId, entry.salts, entry.bloomBits)) {
-      injectBadge(el, "alumni");
-    }
-  }
-
-  async function run() {
-    const hostKey = resolveHostKey(HOSTNAME);
-    if (!hostKey) return;
-
-    const [ledgerResponse, rulesResponse] = await Promise.all([
-      sendMessage({ type: "GET_LEDGER" }),
-      sendMessage({ type: "GET_RULES" })
-    ]);
-    if (!ledgerResponse?.ok || !rulesResponse?.ok) return;
-
-    const ledger = ledgerResponse.data || {};
-    const rules = rulesResponse.data || {};
-    const rule = rules[hostKey];
-    if (!rule || !rule.orgNameSelector) return;
-
-    const candidates = document.querySelectorAll(rule.orgNameSelector);
-    for (const el of candidates) {
-      verifyElement(el, ledger, rule).catch(() => {});
-    }
-  }
-
-  run().catch(() => {});
-
-  // LinkedIn/GitHub/LeetCode are client-rendered SPAs — re-scan on
-  // in-page navigations that don't trigger a full document reload.
-  let lastUrl = window.location.href;
-  const observer = new MutationObserver(() => {
-    if (window.location.href !== lastUrl) {
-      lastUrl = window.location.href;
-      run().catch(() => {});
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
-})();
+const pageObserver = new PageObserver();
+pageObserver.start();

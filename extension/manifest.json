@@ -4,7 +4,11 @@
   "version": "1.0.0",
   "description": "Zero-server cryptographic identity verification.",
   "permissions": [
-    "storage"
+    "storage",
+    "alarms" 
+  ],
+  "host_permissions": [
+    "https://jayjoshi08092003.github.io/*"
   ],
   "background": {
     "service_worker": "background.js",

@@ -1,16 +1,16 @@
 {
   "linkedin.com": {
-    "orgNameSelector": "span.org-top-card-summary-info-list__info-item, a[data-field='experience_company_logo'] + div span",
+    "orgNameSelector": "span.org-top-card-summary-info-list__info-item",
     "idSource": "metaTag",
     "idSelector": "meta[name='profile-id']"
   },
   "github.com": {
-    "orgNameSelector": "span.p-org, a.p-org",
+    "orgNameSelector": "span.p-name, h1",
     "idSource": "globalPath",
-    "idGlobalPath": "__typeahead_data__.viewer_id"
+    "idGlobalPath": "Jayjoshi08092003"
   },
   "leetcode.com": {
-    "orgNameSelector": "div[data-testid='profile-school'], div[data-testid='profile-company']",
+    "orgNameSelector": "div[data-testid='profile-school']",
     "idSource": "attribute",
     "idSelector": "div[data-userid]",
     "idAttribute": "data-userid"

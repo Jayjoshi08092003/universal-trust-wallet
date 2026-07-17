@@ -103,8 +103,8 @@ function runTrustWalletAutomator() {
                     
                     console.log(`[Trust Wallet] Verification payload:`, response);
                     
-                    // --- MOCK OVERRIDE ACTIVATED ---
-                    // Forcing 'verified_active' to test the UI injection visually
+                    // --- TEMPORARY OVERRIDE ACTIVATED ---
+                    // Ignoring the 'unknown' status from the database and forcing the badge to render for UI testing.
                     injectTrustBadge(targetElement, 'verified_active');
                 }
             );

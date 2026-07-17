@@ -38,7 +38,7 @@ export class NetworkManager {
         clearTimeout(timeoutId);
 
         if (response.status === 304 && cachedEntry) {
-          return cachedEntry.data;
+          return type === 'json' ? cachedEntry.data : new Uint8Array(cachedEntry.data);
         }
 
         if (!response.ok) {
@@ -57,7 +57,7 @@ export class NetworkManager {
         const isValid = await CryptoModule.verifySignature(buffer, signatureHex);
         if (!isValid) {
           console.error(`Signature verification failed for ${url}. Rejecting payload.`);
-          if (cachedEntry) return cachedEntry.data; 
+          if (cachedEntry) return type === 'json' ? cachedEntry.data : new Uint8Array(cachedEntry.data); 
           throw new Error('Invalid signature');
         }
 
@@ -68,12 +68,12 @@ export class NetworkManager {
            throw new Error(`Unsupported schema version: ${finalData.schemaVersion}`);
         }
 
-        // Cache update
+        // Cache update: Convert Uint8Array to Array to prevent "Cannot serialize value to JSON"
         await StorageManager.setLocal(cacheKey, {
           etag: response.headers.get('ETag'),
           lastModified: response.headers.get('Last-Modified'),
           timestamp: Date.now(),
-          data: finalData
+          data: type === 'json' ? finalData : Array.from(finalData)
         });
 
         return finalData;
@@ -82,7 +82,7 @@ export class NetworkManager {
         clearTimeout(timeoutId);
         if (attempt === retries - 1) {
           console.warn(`Fetch failed for ${url}, falling back to cache.`, error);
-          if (cachedEntry) return cachedEntry.data;
+          if (cachedEntry) return type === 'json' ? cachedEntry.data : new Uint8Array(cachedEntry.data);
           throw error;
         }
         

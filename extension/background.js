@@ -20,7 +20,8 @@ class TrustEngine {
         NetworkManager.fetchSecure(CONFIG.ENDPOINTS.REVOKED_BIN, 'bin').catch(() => new Uint8Array(0)) 
       ]);
 
-      await StorageManager.setSession('filters', {
+      // Moved to storage.local to bypass the 1MB storage.session quota limit
+      await StorageManager.setLocal('filters', {
         alumni: Array.from(alumniBin),
         active: Array.from(activeBin),
         revoked: Array.from(revokedBin)
@@ -32,12 +33,12 @@ class TrustEngine {
   }
 
   static async verifyIdentity(identifier) {
-    let filters = await StorageManager.getSession('filters');
+    let filters = await StorageManager.getLocal('filters');
     
-    // Lazy load fallback if session storage was cleared
+    // Lazy load fallback
     if (!filters) {
       await this.syncData();
-      filters = await StorageManager.getSession('filters');
+      filters = await StorageManager.getLocal('filters');
       if (!filters) return { status: 'unknown', reason: 'filters_unavailable' };
     }
 

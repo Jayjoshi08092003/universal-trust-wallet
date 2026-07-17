@@ -4,12 +4,12 @@ export const CONFIG = {
   // Generate using the provided tools/keygen.js
   PUBLIC_KEY_B64: "MCowBQYDK2VwAyEAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX=", 
   INSTITUTION_SECRET: "utw-enterprise-v2-hmac-secret-key",
-  ENDPOINTS: {
-    RULES: "https://your-org.github.io/universal-trust-wallet/rules.json",
-    LEDGER: "https://your-org.github.io/universal-trust-wallet/ledger.json",
-    ALUMNI_BIN: "https://your-org.github.io/universal-trust-wallet/verified-alumni.bin",
-    ACTIVE_BIN: "https://your-org.github.io/universal-trust-wallet/current-active.bin",
-    REVOKED_BIN: "https://your-org.github.io/universal-trust-wallet/revoked.bin"
+ENDPOINTS: {
+    RULES: "https://jayjoshi08092003.github.io/universal-trust-wallet/rules.json",
+    LEDGER: "https://jayjoshi08092003.github.io/universal-trust-wallet/ledger.json",
+    ALUMNI_BIN: "https://jayjoshi08092003.github.io/universal-trust-wallet/verified-alumni.bin",
+    ACTIVE_BIN: "https://jayjoshi08092003.github.io/universal-trust-wallet/current-active.bin",
+    REVOKED_BIN: "https://jayjoshi08092003.github.io/universal-trust-wallet/revoked.bin"
   },
   BLOOM: {
     HASH_COUNT: 5,

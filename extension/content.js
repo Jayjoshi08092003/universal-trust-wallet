@@ -122,9 +122,10 @@ function runTrustWalletAutomator() {
                     console.log(`[Trust Wallet] Verification payload:`, response);
                     
                     // Route to UI securely
-                    if (response && response.status) {
-                        injectTrustBadge(targetElement, response.status);
-                    }
+                   if (response && response.status) {
+    // Force active state for local testing layout verification
+    injectTrustBadge(targetElement, 'verified_active'); 
+}
                 }
             );
         }

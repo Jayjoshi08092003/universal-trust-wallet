@@ -64,6 +64,9 @@ function injectTrustBadge(targetElement, status) {
     badge.style.fontWeight = 'bold';
     badge.style.display = 'inline-flex';
     badge.style.alignItems = 'center';
+    
+    // NATIVE FONT FALLBACK: Bypasses GitHub CSP blocks on external fonts
+    badge.style.fontFamily = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
 
     // Map cryptographically verified status to UI
     if (status === 'verified_active') {

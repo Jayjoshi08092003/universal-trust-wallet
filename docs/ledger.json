@@ -1,0 +1,22 @@
+{
+  "acmecorp.example": {
+    "displayName": "Acme Corporation",
+    "type": "employer",
+    "salts": [
+      "a1f9c3d2e7b04f88",
+      "6e2b7c1a9d4f0e33",
+      "c48d0a7f31b6e9c5"
+    ],
+    "bloomBits": 131072
+  },
+  "state-university.example": {
+    "displayName": "State University",
+    "type": "academic",
+    "salts": [
+      "9b3e7f1c02a4d688",
+      "1d6a2f9b7c3e0451",
+      "e07c4b9a1f382d66"
+    ],
+    "bloomBits": 65536
+  }
+}

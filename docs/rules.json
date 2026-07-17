@@ -1,0 +1,18 @@
+{
+  "linkedin.com": {
+    "orgNameSelector": "span.org-top-card-summary-info-list__info-item, a[data-field='experience_company_logo'] + div span",
+    "idSource": "metaTag",
+    "idSelector": "meta[name='profile-id']"
+  },
+  "github.com": {
+    "orgNameSelector": "span.p-org, a.p-org",
+    "idSource": "globalPath",
+    "idGlobalPath": "__typeahead_data__.viewer_id"
+  },
+  "leetcode.com": {
+    "orgNameSelector": "div[data-testid='profile-school'], div[data-testid='profile-company']",
+    "idSource": "attribute",
+    "idSelector": "div[data-userid]",
+    "idAttribute": "data-userid"
+  }
+}
